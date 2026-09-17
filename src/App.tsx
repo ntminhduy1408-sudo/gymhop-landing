@@ -1,5 +1,5 @@
-import { motion } from 'motion/react'
-import { useState } from 'react'
+import { motion, useInView } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   QrCode,
@@ -11,6 +11,44 @@ import { Button } from '@/components/ui/button'
 import { HowItWorks } from '@/components/HowItWorks'
 import { Reveal } from '@/components/ui/Reveal'
 const eyebrow = 'w-fit text-center text-[13px] font-bold uppercase tracking-[0.08em] text-black bg-volt'
+
+const EASE = [0.16, 1, 0.3, 1] as const
+
+// Number-scramble: digits spin, then lock into the real value on scroll into view.
+function ScrambleValue({ text, className }: { text: string; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-40px' })
+  const [out, setOut] = useState(text)
+  useEffect(() => {
+    if (!inView) return
+    const pool = '0123456789'
+    const chars = text.split('')
+    const start = performance.now()
+    const dur = 1600
+    let raf = 0
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / dur)
+      setOut(
+        chars
+          .map((c, i) => {
+            if (!/[0-9]/.test(c)) return c
+            const lockAt = 0.25 + 0.65 * (i / Math.max(1, chars.length - 1))
+            if (p >= lockAt) return c
+            return pool[Math.floor(Math.random() * pool.length)]
+          })
+          .join(''),
+      )
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [inView, text])
+  return (
+    <span ref={ref} className={className}>
+      {out}
+    </span>
+  )
+}
 
 export default function App() {
   const [open, setOpen] = useState(false)
@@ -53,17 +91,20 @@ export default function App() {
         {/* Mobile hero — Klarna pattern: image card first, text below on plain bg */}
         <div className="md:hidden">
           <div className="overflow-hidden rounded-[32px]">
-            <img
+            <motion.img
               src="/assets/bg.webp"
               alt="App GymHop: tìm partner gym gần bạn và quét QR check-in"
               className="h-[320px] w-full object-cover object-center"
               loading="eager"
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
           <motion.div
             initial="hidden"
             animate="show"
-            variants={{ show: { transition: { staggerChildren: 0.09 } } }}
+            variants={{ show: { transition: { delayChildren: 0.6, staggerChildren: 0.14 } } }}
             className="flex flex-col items-center px-2 pt-8 text-center"
           >
             <motion.h1
@@ -95,17 +136,20 @@ export default function App() {
 
         {/* Desktop hero — overlay card, content left / photo right */}
         <div className="relative hidden overflow-hidden rounded-[32px] bg-white md:block sm:mt-4 mt-8">
-          <img
+          <motion.img
             src="/assets/bg.webp"
             alt="App GymHop: tìm partner gym gần bạn và quét QR check-in"
             className="absolute inset-0 h-full w-full object-cover object-center"
             loading="eager"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1] }}
           />
           <div className="absolute inset-0" aria-hidden />
           <motion.div
             initial="hidden"
             animate="show"
-            variants={{ show: { transition: { staggerChildren: 0.09 } } }}
+            variants={{ show: { transition: { delayChildren: 0.6, staggerChildren: 0.14 } } }}
             className="relative flex min-h-[600px] flex-col justify-center p-16"
           >
             {[
@@ -135,9 +179,32 @@ export default function App() {
 
         {/* Trust strip — Klarna: statement left, stats right */}
         <div className="flex flex-col jusitfy-center items-center gap-10 px-2 py-16 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
-          <p className="font-display text-center sm:text-left text-[22px] font-extrabold leading-[1.1] sm:text-[28px]">
-            Tập mọi nơi, <mark className="rounded-lg bg-volt px-2">chuẩn</mark> mọi quận
-          </p>
+          <motion.p
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-40px' }}
+            variants={{ show: { transition: { delayChildren: 0.15, staggerChildren: 0.13 } } }}
+            className="font-display text-center sm:text-left text-[22px] font-extrabold leading-[1.1] sm:text-[28px]"
+          >
+            {[
+              { t: 'Tập' },
+              { t: 'mọi' },
+              { t: 'nơi,' },
+              { t: 'chuẩn', mark: true },
+              { t: 'mọi' },
+              { t: 'quận' },
+            ].map((w, i, arr) => (
+              <span key={i} className="inline-block overflow-hidden pb-[0.14em] -mb-[0.14em] align-bottom">
+                <motion.span
+                  className={`inline-block ${w.mark ? 'rounded-lg bg-volt px-2' : ''} ${i < arr.length - 1 ? 'mr-[0.26em]' : ''}`}
+                  variants={{ hidden: { y: '110%' }, show: { y: '0%' } }}
+                  transition={{ duration: 0.85, ease: EASE }}
+                >
+                  {w.t}
+                </motion.span>
+              </span>
+            ))}
+          </motion.p>
           <div className="flex justify-center sm:justify-start flex-wrap gap-x-12 gap-y-5">
             {[
               ['8+', 'gyms quanh bạn'],
@@ -146,7 +213,7 @@ export default function App() {
               ['0', 'hợp đồng, sale PT'],
             ].map(([v, l]) => (
               <div key={l}>
-                <p className="font-display text-[26px] font-extrabold leading-none sm:text-[32px]">{v}</p>
+                <ScrambleValue text={v} className="font-display block text-[26px] font-extrabold leading-none sm:text-[32px]" />
                 <p className="mt-1.5 text-[14px] text-[#5f6368]">{l}</p>
               </div>
             ))}
