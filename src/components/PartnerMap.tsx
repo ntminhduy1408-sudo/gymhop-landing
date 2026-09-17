@@ -36,12 +36,12 @@ export function PartnerMap() {
     <div className="relative min-h-[420px] overflow-hidden rounded-[32px] bg-[#1e1a33] sm:min-h-[480px]">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMin slice" className="absolute inset-0 h-full w-full" role="img" aria-label="Bản đồ phủ sóng partner gym tại TP.HCM">
         <image href="/assets/owner.webp" x={0} y={0} width={W} height={H} />
-        {gyms.map((g) => (
+        {/* {gyms.map((g) => (
           <Pin key={g.n} x={g.fx * W} y={g.fy * H} label={g.n} />
-        ))}
+        ))} */}
       </svg>
 
-      <div className="absolute inset-x-5 bottom-5 sm:inset-x-6 sm:bottom-6">
+      {/* <div className="absolute inset-x-5 bottom-5 sm:inset-x-6 sm:bottom-6">
         <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-xl">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#d9ff3d] text-black">
             <Dumbbell size={19} />
@@ -52,7 +52,7 @@ export function PartnerMap() {
           </div>
           <ChevronRight size={18} className="shrink-0 text-black/30" />
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }
