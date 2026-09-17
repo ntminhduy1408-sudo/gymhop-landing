@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --color-brand: #016bfe;
+  --color-brand-ink: #0b3fc1;
+  --color-paper: #f7f6f3;
+  --color-ink: #131316;
+  --color-muted: #5f6368;
+  --color-pin: #ff5a1f;
+  --color-mint: #dff3e3;
+  --color-volt: #d9ff3d;
+  --ease-klarna: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::selection {
+  background: var(--color-volt);
+  color: var(--color-ink);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.035em;
+}
+
+/* Klarna-like flat card hover: translate + soft ambient shadow */
+.card-lift {
+  transition:
+    transform 300ms var(--ease-klarna),
+    box-shadow 300ms var(--ease-klarna);
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.08);
+}
+.card-lift:hover .zoom-img {
+  transform: scale(1.04);
+}
+.zoom-img {
+  transition: transform 500ms var(--ease-klarna);
+}
+
+/* dotted route lines on hero map */
+.route-line {
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+}

@@ -1,0 +1,444 @@
+import * as Dialog from '@radix-ui/react-dialog'
+import { AnimatePresence, motion } from 'motion/react'
+import { useMemo, useRef, useState, type ComponentType } from 'react'
+import {
+  ArrowLeft,
+  BadgeCheck,
+  CalendarCheck,
+  Check,
+  Coins,
+  Copy,
+  CreditCard,
+  Dumbbell,
+  Flame,
+  Gift,
+  PartyPopper,
+  PenLine,
+  ShieldAlert,
+  Split,
+  Sprout,
+  Trophy,
+  User,
+  UserPlus,
+  Users,
+  Wallet,
+  X,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { postLead, queuePosition, referralCode, cooldownLeft } from '@/lib/sheets'
+import { cn } from '@/lib/utils'
+
+type Icon = ComponentType<{ size?: number | string; className?: string }>
+type Opt = { v: string; icon: Icon }
+type Q = { key: string; group: string; q: string; opts: Opt[]; other?: boolean }
+
+const SEGMENT: Q = {
+  key: 'segment',
+  group: 'Làm quen',
+  q: 'Bạn tập gym được bao lâu rồi?',
+  opts: [
+    { v: 'Mới tập (< 3 tháng)', icon: Sprout },
+    { v: 'Đang tập (3–12 tháng)', icon: Dumbbell },
+    { v: 'Tập lâu năm (> 1 năm)', icon: Trophy },
+  ],
+}
+
+const BARRIER: Q = {
+  key: 'barrier',
+  group: 'Người mới',
+  q: 'Điều gì khiến bạn ngại bắt đầu nhất?',
+  other: true,
+  opts: [
+    { v: 'Không biết tập gì', icon: Dumbbell },
+    { v: 'Ngại phòng đông', icon: Users },
+    { v: 'Sợ bị chèo kéo mua gói', icon: ShieldAlert },
+    { v: 'Không có bạn dẫn đi cùng', icon: UserPlus },
+  ],
+}
+
+const FREQ: Q = {
+  key: 'frequency',
+  group: 'Về bạn',
+  q: 'Bạn đi tập thường xuyên cỡ nào?',
+  opts: [
+    { v: '1–2 buổi/tuần', icon: CalendarCheck },
+    { v: '3–4 buổi/tuần', icon: Flame },
+    { v: '5+ buổi/tuần', icon: Trophy },
+  ],
+}
+
+const WITH_WHOM: Q = {
+  key: 'workout_with',
+  group: 'Tập cùng bạn',
+  q: 'Bạn thường đi tập với ai?',
+  opts: [
+    { v: 'Một mình', icon: User },
+    { v: 'Với 1 bạn', icon: Users },
+    { v: 'Nhóm bạn', icon: PartyPopper },
+  ],
+}
+
+const INVITE: Q = {
+  key: 'invite_interest',
+  group: 'Tập cùng bạn',
+  q: 'Muốn rủ bạn tập cùng không?',
+  opts: [
+    { v: 'Chắc chắn, càng đông càng vui', icon: PartyPopper },
+    { v: 'Tùy hôm', icon: CalendarCheck },
+    { v: 'Thích tập một mình', icon: User },
+  ],
+}
+
+const WHO_PAYS: Q = {
+  key: 'who_pays',
+  group: 'Tập cùng bạn',
+  q: 'Khi đi cùng nhau, tiền tính sao?',
+  other: true,
+  opts: [
+    { v: 'Mạnh ai nấy trả', icon: Wallet },
+    { v: 'Mình hay bao bạn', icon: Gift },
+    { v: 'Share đều với nhau', icon: Split },
+    { v: 'Đứa nào có gói tháng thì quẹt ké', icon: CreditCard },
+  ],
+}
+
+const PRICE: Q = {
+  key: 'price_band',
+  group: 'Về bạn',
+  q: 'Giá 1 buổi tập bao nhiêu là ổn?',
+  opts: [
+    { v: '20–25k', icon: Coins },
+    { v: '25–35k', icon: Coins },
+    { v: '35–45k', icon: Coins },
+  ],
+}
+
+const EASE = [0.16, 1, 0.3, 1] as const
+
+export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boolean) => void }) {
+  const [stage, setStage] = useState<'survey' | 'contact' | 'done'>('survey')
+  const [qi, setQi] = useState(0)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [otherOpen, setOtherOpen] = useState(false)
+  const [otherText, setOtherText] = useState('')
+  const [name, setName] = useState('')
+  const [contact, setContact] = useState('')
+  const [district, setDistrict] = useState('')
+  const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [website, setWebsite] = useState('') // honeypot — humans never fill this
+  const openedAt = useRef(0)
+  if (open && !openedAt.current) openedAt.current = Date.now()
+  if (!open && openedAt.current) openedAt.current = 0
+
+  const isNew = answers.segment === 'Mới tập (< 3 tháng)'
+  const steps = useMemo<Q[]>(
+    () => [SEGMENT, isNew ? BARRIER : FREQ, WITH_WHOM, INVITE, WHO_PAYS, PRICE],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [answers.segment],
+  )
+  const total = steps.length + 1 // + contact step
+  const progress = stage === 'survey' ? qi / total : stage === 'contact' ? steps.length / total : 1
+
+  const referredBy = useMemo(() => new URLSearchParams(location.search).get('ref') ?? '', [])
+  const idKey = useMemo(() => contact.trim() || name.trim() || 'guest', [contact, name, stage])
+  const code = useMemo(() => referralCode(`${name.trim()}|${idKey}`), [name, idKey])
+  const queue = useMemo(() => queuePosition(`${name.trim()}|${idKey}`), [name, idKey, stage])
+  const link = useMemo(() => `${location.origin}${location.pathname}?ref=${code}`, [code])
+
+  function goQi(n: number) {
+    setQi(n)
+    setOtherOpen(false)
+    setOtherText('')
+  }
+
+  function answer(opt: string) {
+    const key = steps[qi].key
+    const next = { ...answers, [key]: opt }
+    setAnswers(next)
+    setOtherOpen(false)
+    setOtherText('')
+    if (key === 'segment') {
+      // Recompute branch, stay on the same position (next question).
+      setTimeout(() => setQi(1), 180)
+    } else if (qi < steps.length - 1) {
+      setTimeout(() => setQi(qi + 1), 180)
+    } else {
+      setTimeout(() => setStage('contact'), 180)
+    }
+  }
+
+  function answerOther() {
+    const t = otherText.trim()
+    if (!t) return
+    answer(`Khác: ${t}`)
+  }
+
+  async function submitContact() {
+    if (!name.trim()) return setErr('Cho mình xin tên để giữ slot nhé.')
+    if (website) {
+      // Bot trap: pretend success, post nothing.
+      setStage('done')
+      return
+    }
+    if (Date.now() - openedAt.current < 4000) return setErr('Bạn làm nhanh quá đó — chờ 1 xíu rồi bấm lại nhé.')
+    const wait = cooldownLeft()
+    if (wait > 0) return setErr(`Bạn vừa gửi rồi — thử lại sau ${wait}s nhé.`)
+    setErr('')
+    await postLead({
+      ...answers,
+      name: name.trim(),
+      contact: contact.trim() || undefined,
+      district: district.trim() || undefined,
+      referral_code: code,
+      referred_by: referredBy || undefined,
+      created_at: new Date().toISOString(),
+    })
+    setStage('done')
+  }
+
+  const step = steps[Math.min(qi, steps.length - 1)]
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpen}>
+      <AnimatePresence>
+        {open && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
+              />
+            </Dialog.Overlay>
+            <Dialog.Content asChild>
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 24, scale: 0.98 }}
+                transition={{ type: 'spring', bounce: 0.18, duration: 0.5 }}
+                className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] bg-white p-6 shadow-2xl sm:p-8"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10">
+                    <motion.div
+                      className="h-full rounded-full bg-[#d9ff3d] ring-1 ring-inset ring-black/15"
+                      animate={{ width: `${Math.round(progress * 100)}%` }}
+                      transition={{ duration: 0.35, ease: EASE }}
+                    />
+                  </div>
+                  <Dialog.Close className="-mr-1 -mt-1 ml-3 rounded-full p-1.5 hover:bg-black/5" aria-label="Đóng">
+                    <X size={18} />
+                  </Dialog.Close>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {stage === 'survey' && (
+                    <motion.div
+                      key={`q-${qi}-${step.key}`}
+                      initial={{ x: 32, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -32, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: EASE }}
+                    >
+                      <div className="mt-4 flex items-center gap-2">
+                        {qi > 0 && (
+                          <button onClick={() => goQi(qi - 1)} className="rounded-full p-1.5 hover:bg-black/5" aria-label="Quay lại">
+                            <ArrowLeft size={16} />
+                          </button>
+                        )}
+                        <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-black/45">
+                          {step.group} · {qi + 1}/{steps.length}
+                        </p>
+                      </div>
+                      <Dialog.Title className="font-display mt-2 text-[24px] font-bold leading-[1.15]">
+                        {step.q}
+                      </Dialog.Title>
+                      <div className="mt-4 grid gap-2">
+                        {step.opts.map((o) => {
+                          const selected = answers[step.key] === o.v
+                          const Ico = o.icon
+                          return (
+                            <motion.button
+                              key={o.v}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => answer(o.v)}
+                              className={cn(
+                                'flex items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left text-[15px] font-semibold transition-colors',
+                                selected
+                                  ? 'border-[#131316] bg-[#d9ff3d]'
+                                  : 'border-black/10 bg-white hover:border-black/40 hover:bg-[#f7f6f3]',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                                  selected ? 'bg-[#131316] text-[#d9ff3d]' : 'bg-black/5 text-black/60',
+                                )}
+                              >
+                                <Ico size={18} />
+                              </span>
+                              <span className="flex-1">{o.v}</span>
+                              {selected && <Check size={16} strokeWidth={3} />}
+                            </motion.button>
+                          )
+                        })}
+                        {step.other && (
+                          <>
+                            <motion.button
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setOtherOpen((v) => !v)}
+                              className={cn(
+                                'flex items-center gap-3 rounded-2xl border-2 border-dashed px-3.5 py-3 text-left text-[15px] font-semibold transition-colors',
+                                otherOpen
+                                  ? 'border-[#131316] bg-[#f7f6f3]'
+                                  : 'border-black/15 bg-white hover:border-black/40',
+                              )}
+                            >
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/5 text-black/60">
+                                <PenLine size={18} />
+                              </span>
+                              <span className="flex-1">Ý khác, tự nhập…</span>
+                            </motion.button>
+                            <AnimatePresence initial={false}>
+                              {otherOpen && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.25, ease: EASE }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="flex gap-2 pt-1">
+                                    <input
+                                      value={otherText}
+                                      onChange={(e) => setOtherText(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && answerOther()}
+                                      placeholder="Nhập câu trả lời của bạn…"
+                                      autoFocus
+                                      className="h-[52px] flex-1 rounded-2xl border border-black/10 bg-[#f7f6f3] px-4 text-[15px] outline-none focus:border-[#131316] focus:bg-white"
+                                    />
+                                    <Button variant="volt" className="h-[52px] shrink-0 px-5" onClick={answerOther}>
+                                      Xong →
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {stage === 'contact' && (
+                    <motion.div
+                      key="contact"
+                      initial={{ x: 32, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -32, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: EASE }}
+                    >
+                      <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d9ff3d]">
+                        <PartyPopper size={26} />
+                      </div>
+                      <Dialog.Title className="font-display mt-3 text-[26px] font-extrabold leading-[1.1]">
+                        Xong! Nhận 2 credits khi ra mắt.
+                      </Dialog.Title>
+                      <p className="mt-2 text-[15px] leading-[1.55] text-[#5f6368]">
+                        Để lại liên lạc, tụi mình gửi credits lúc app lên sóng. Bỏ trống vẫn giữ slot — không ép.
+                      </p>
+                      <div className="mt-5 space-y-3">
+                        <input
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Tên của bạn * (VD: Minh Anh)"
+                          className="h-[52px] w-full rounded-2xl border border-black/10 bg-[#f7f6f3] px-4 text-[15px] outline-none focus:border-[#131316] focus:bg-white"
+                        />
+                        <input
+                          value={contact}
+                          onChange={(e) => setContact(e.target.value)}
+                          placeholder="SĐT / Zalo / Email (không bắt buộc)"
+                          className="h-[52px] w-full rounded-2xl border border-black/10 bg-[#f7f6f3] px-4 text-[15px] outline-none focus:border-[#131316] focus:bg-white"
+                        />
+                        <input
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          placeholder="Khu vực muốn tập (VD: Bình Thạnh)"
+                          className="h-[52px] w-full rounded-2xl border border-black/10 bg-[#f7f6f3] px-4 text-[15px] outline-none focus:border-[#131316] focus:bg-white"
+                        />
+                        {/* Honeypot: off-screen, bots fill it, humans can't see it */}
+                        <input
+                          value={website}
+                          onChange={(e) => setWebsite(e.target.value)}
+                          placeholder="Website"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          aria-hidden
+                          className="absolute h-px w-px opacity-0"
+                        />
+                        {err && <p className="text-[13px] font-medium text-red-600">{err}</p>}
+                        <Button variant="volt" className="w-full" onClick={submitContact}>
+                          Nhận slot + 2 credits →
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {stage === 'done' && (
+                    <motion.div
+                      key="done"
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ type: 'spring', bounce: 0.35, duration: 0.55 }}
+                      className="text-center"
+                    >
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', bounce: 0.5, delay: 0.1 }}
+                        className="mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#d9ff3d] text-black"
+                      >
+                        <BadgeCheck size={30} />
+                      </motion.div>
+                      <Dialog.Title className="font-display mt-3 text-[28px] font-extrabold leading-tight">
+                        {name.trim() ? `${name.trim()} là` : 'Bạn là'} #{queue}!
+                      </Dialog.Title>
+                      <p className="mx-auto mt-2 max-w-[340px] text-[15px] text-[#5f6368]">
+                        Rủ 1 gym bro — cả hai cùng +1 credit khi ra mắt.
+                      </p>
+                      <div className="mt-4 flex items-center gap-2 rounded-full border border-black/10 bg-[#f7f6f3] p-1.5 pl-4">
+                        <span className="flex-1 truncate text-left text-[13px] font-medium">{link}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(link)
+                            setCopied(true)
+                            setTimeout(() => setCopied(false), 1600)
+                          }}
+                          className="flex h-9 items-center gap-1.5 rounded-full bg-[#131316] px-4 text-[13px] font-semibold text-white"
+                        >
+                          {copied ? <Check size={14} /> : <Copy size={14} />}
+                          {copied ? 'Đã copy' : 'Copy'}
+                        </button>
+                      </div>
+                      <a
+                        href={`https://sp.zalo.me/share?url=${encodeURIComponent(link)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 flex h-12 items-center justify-center rounded-full bg-[#131316] text-[15px] font-semibold text-white"
+                      >
+                        Share qua Zalo
+                      </a>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
+    </Dialog.Root>
+  )
+}
