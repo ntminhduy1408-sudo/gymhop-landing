@@ -10,7 +10,6 @@ import { LifestyleCard } from '@/components/LifestyleCard'
 import { Button } from '@/components/ui/button'
 import { HowItWorks } from '@/components/HowItWorks'
 import { Reveal } from '@/components/ui/Reveal'
-
 const eyebrow = 'w-fit text-center text-[13px] font-bold uppercase tracking-[0.08em] text-black bg-volt'
 
 export default function App() {
@@ -25,6 +24,7 @@ export default function App() {
   ]
 
   return (
+
     <div className="min-h-screen bg-[#f7f6f3] text-[#131316]">
       {/* Nav */}
       <header className="sticky top-0 z-40 bg-[#f7f6f3]/85 backdrop-blur-md">
