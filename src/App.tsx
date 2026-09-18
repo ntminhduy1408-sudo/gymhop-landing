@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   QrCode,
+  Check, MapPin, Ticket, Users
 } from 'lucide-react'
 import { WaitlistModal } from '@/components/WaitlistModal'
 import { PartnerMap } from '@/components/PartnerMap'
@@ -107,10 +108,18 @@ export default function App() {
             variants={{ show: { transition: { delayChildren: 0.6, staggerChildren: 0.14 } } }}
             className="flex flex-col items-center px-2 pt-8 text-center"
           >
+            <motion.span
+              variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-flex items-center gap-2 rounded-full bg-[#131316] px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-volt"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
+              Sắp ra mắt
+            </motion.span>
             <motion.h1
               variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display text-[32px] font-black leading-[1.35] tracking-[-0.02em]"
+              className="mt-4 font-display text-[32px] font-black leading-[1.35] tracking-[-0.02em]"
             >
               Gym nào bạn thích thì là<br />
               <mark className="rounded-xl bg-volt px-3 py-0.5">gym của bạn.</mark>
@@ -153,7 +162,11 @@ export default function App() {
             className="relative flex min-h-[600px] flex-col justify-center p-16"
           >
             {[
-              <h1 key="h" className="font-display max-w-[560px] text-[56px] font-black leading-[1.05] text-white tracking-[-0.02em]">
+              <span key="e" className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-volt backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
+                Sắp ra mắt
+              </span>,
+              <h1 key="h" className="font-display mt-5 max-w-[560px] text-[56px] font-black leading-[1.05] text-white tracking-[-0.02em]">
                 Gym nào bạn thích thì là<br/>
                 <mark className="rounded-xl bg-volt px-4 py-1">gym của bạn.</mark>
               </h1>,
@@ -268,7 +281,113 @@ export default function App() {
       {/* How it works — centered intro + clean cards (no more indented rows) */}
       <HowItWorks eyebrow={eyebrow} />
 
+      {/* Launch roadmap — honest pre-launch signal, no fake numbers */}
+      <section className="mx-auto max-w-[1320px] px-5 pb-24 sm:px-8 lg:pb-32">
+        <Reveal className="mx-auto max-w-[620px] text-center">
+          <p className={`${eyebrow} mx-auto`}>Lộ trình ra mắt</p>
+          <h2 className="font-display mt-4 text-[28px] font-black leading-[1.08] tracking-[-0.02em] sm:text-[36px]">
+            App chưa lên sóng. Slot thì có.
+          </h2>
+          <p className="mt-5 text-[16px] leading-[1.6] text-[#5f6368]">
+            Ba mốc, không hứa suông — mốc sau chỉ mở khi mốc trước xong. Bạn đang ở mốc đầu tiên.
+          </p>
+        </Reveal>
 
+        <div className="relative mt-14">
+          <div aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-6 hidden border-t-2 border-dashed border-black/10 md:block" />
+
+          <div className="grid gap-12 md:grid-cols-3 md:gap-4">
+            {[
+              {
+                n: '01', state: 'now', label: 'Bạn ở đây', t: 'Waitlist',
+                meta: { Icon: Ticket, text: 'Tặng 2 credits khi ra mắt' },
+              },
+              {
+                n: '02', state: 'next', label: 'Tiếp theo', t: 'Beta kín',
+                d: '500 người đầu tiên vào app tập thử ở partner gym.',
+                meta: { Icon: Users, text: '500 slot đầu tiên' },
+              },
+              {
+                n: '03', state: 'later', label: 'Sau beta', t: 'Ra mắt',
+                d: 'Mở cho tất cả mọi người, mọi quận lên sóng dần.',
+                meta: { Icon: MapPin, text: 'Mở dần theo quận' },
+              },
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 0.1} className="h-full">
+                <div className="relative flex h-full w-full flex-col items-center">
+                  {/* mobile connector — previously the timeline vanished on small screens */}
+                  {i < 2 && (
+                    <div aria-hidden="true" className="absolute left-1/2 top-[4.75rem] -bottom-12 border-l-2 border-dashed border-black/10 md:hidden" />
+                  )}
+
+                  {/* node */}
+                  <span className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-display text-[15px] font-black ring-4 ring-[#f7f6f3] ${
+                    s.state === 'now'
+                      ? 'bg-volt text-black'
+                      : 'border-2 border-dashed border-black/20 bg-white text-black/35'
+                  }`}>
+                    {s.state === 'now' && (
+                      <span className="absolute inset-0 animate-ping rounded-full bg-volt/40 [animation-duration:2.4s]" />
+                    )}
+                    {s.n}
+                  </span>
+
+                  {/* status label */}
+                  <span className={`relative z-10 mt-3 text-[10px] font-extrabold uppercase tracking-[0.14em] ${
+                    s.state === 'now' ? 'text-black' : 'text-black/35'
+                  }`}>
+                    {s.state === 'now' && <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-volt align-middle" />}
+                    {s.label}
+                  </span>
+
+                  {/* card */}
+                  <div className={`relative z-10 mt-4 flex w-full flex-1 flex-col rounded-[28px] p-7 text-left ${
+                    s.state === 'now'
+                      ? 'bg-white shadow-[0_24px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-black/5 transition-transform duration-300 hover:-translate-y-1'
+                      : 'border border-dashed border-black/15 bg-white/50'
+                  }`}>
+                    {s.state === 'now' && (
+                      <span aria-hidden="true" className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[4px] bg-white ring-1 ring-black/5" />
+                    )}
+
+                    <h3 className={`font-display text-[21px] font-black tracking-[-0.01em] ${s.state !== 'now' && 'text-black/75'}`}>{s.t}</h3>
+
+                    {s.state === 'now' ? (
+                      <ul className="mt-5 space-y-3.5">
+                        {[
+                          'Giữ slot trước đợt beta kín',
+                          'Survey 30 giây — góp ý thẳng vào app',
+                          '2 credits cộng lúc ra mắt',
+                        ].map((item) => (
+                          <li key={item} className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-volt">
+                              <Check size={12} strokeWidth={3.5} className="text-black" />
+                            </span>
+                            <span className="text-[14px] font-medium leading-[1.5]">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-3 text-[15px] leading-[1.65] text-[#5f6368]">{s.d}</p>
+                    )}
+
+                    <div className="mt-auto pt-6">
+                      <div className={`flex items-center gap-1.5 border-t pt-4 text-[12px] font-bold ${
+                        s.state === 'now'
+                          ? 'border-black/[0.07] text-black/55'
+                          : 'border-dashed border-black/10 text-black/45'
+                      }`}>
+                        <s.meta.Icon size={13} strokeWidth={2.5} className="shrink-0 text-black/70" />
+                        {s.meta.text}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Final CTA — big rounded volt card (Klarna "Get started in minutes"), not full-bleed */}
       <section className="mx-auto pb-24 lg:pb-32">
