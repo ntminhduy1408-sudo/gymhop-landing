@@ -525,7 +525,7 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
                         {name.trim() ? `${name.trim()} là` : 'Bạn là'} #{queue}!
                       </Dialog.Title>
                       <p className="mx-auto mt-2 max-w-[340px] text-[15px] text-[#5f6368]">
-                        Rủ 1 gym bro — cả hai cùng +1 credit khi ra mắt.
+                        Rủ 1 gym bro — cả hai cùng +1 credit khi ra mắt. Nhớ lưu lại mã giới thiệu nhé!
                       </p>
                       <div className="mt-4 flex items-center gap-2 rounded-full border border-black/10 bg-[#f7f6f3] p-1.5 pl-4">
                         <span className="flex-1 truncate text-left text-[13px] font-medium">{link}</span>
