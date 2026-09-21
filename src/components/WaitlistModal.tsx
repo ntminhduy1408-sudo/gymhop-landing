@@ -541,14 +541,6 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
                           {copied ? 'Đã copy' : 'Copy'}
                         </button>
                       </div>
-                      <a
-                        href={`https://sp.zalo.me/share?url=${encodeURIComponent(link)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-2 flex h-12 items-center justify-center rounded-full bg-[#131316] text-[15px] font-semibold text-white"
-                      >
-                        Share qua Zalo
-                      </a>
                     </motion.div>
                   )}
                 </AnimatePresence>
