@@ -3,7 +3,7 @@
 // (Execute as: Me, Access: Anyone), then put the URL in VITE_SHEETS_URL.
 // Optional: set Script Property TOKEN to reject posts without ?token=...
 
-var COLS = ['created_at', 'segment', 'barrier', 'workout_with', 'invite_interest', 'who_pays', 'frequency', 'price_band', 'name', 'contact', 'district', 'referral_code', 'referred_by'];
+var COLS = ['created_at', 'segment', 'barrier', 'workout_with', 'friend_freq', 'invite_interest', 'who_pays', 'group_book', 'frequency', 'time_slot', 'discovery', 'pain_point', 'pay_now', 'price_band', 'bundle_appeal', 'multi_gym_appeal', 'qr_ease', 'name', 'contact', 'district', 'referral_code', 'referred_by'];
 
 function out(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);

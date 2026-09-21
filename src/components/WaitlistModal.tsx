@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ComponentType } from 'react'
 import {
   ArrowLeft,
   BadgeCheck,
+  Calendar,
   CalendarCheck,
   Check,
   Coins,
@@ -11,12 +12,23 @@ import {
   CreditCard,
   Dumbbell,
   Flame,
+  Footprints,
   Gift,
+  Heart,
+  MapPin,
+  Meh,
+  MessageCircle,
+  Moon,
   PartyPopper,
   PenLine,
   ShieldAlert,
   Split,
   Sprout,
+  Sun,
+  Sunrise,
+  Sunset,
+  ThumbsDown,
+  ThumbsUp,
   Trophy,
   User,
   UserPlus,
@@ -102,6 +114,112 @@ const WHO_PAYS: Q = {
   ],
 }
 
+const FRIEND_FREQ: Q = {
+  key: 'friend_freq',
+  group: 'Tập cùng bạn',
+  q: 'Bao lâu bạn tập chung với bạn bè 1 lần?',
+  opts: [
+    { v: 'Hàng tuần', icon: CalendarCheck },
+    { v: 'Vài lần mỗi tháng', icon: Calendar },
+    { v: 'Hiếm khi', icon: User },
+    { v: 'Chưa từng, nhưng muốn thử', icon: Sprout },
+  ],
+}
+
+const GROUP_BOOK: Q = {
+  key: 'group_book',
+  group: 'Tập cùng bạn',
+  q: 'Nếu có app giúp bạn tập mọi nơi cùng bạn bè / đồng nghiệp, bạn có muốn trải nghiệm?',
+  opts: [
+    { v: 'Chắc chắn rồi', icon: Heart },
+    { v: 'Nghe được', icon: ThumbsUp },
+    { v: 'Chưa chắc', icon: Meh },
+    { v: 'Không cần', icon: ThumbsDown },
+  ],
+}
+
+const TIME_SLOT: Q = {
+  key: 'time_slot',
+  group: 'Về bạn',
+  q: 'Bạn hay tập khung giờ nào?',
+  opts: [
+    { v: 'Sáng sớm (< 7h)', icon: Sunrise },
+    { v: 'Trưa', icon: Sun },
+    { v: 'Chiều tối (17–20h)', icon: Sunset },
+    { v: 'Khuya (> 20h)', icon: Moon },
+  ],
+}
+
+const DISCOVERY: Q = {
+  key: 'discovery',
+  group: 'Về bạn',
+  q: 'Bạn tìm phòng tập mới bằng cách nào?',
+  other: true,
+  opts: [
+    { v: 'Bạn bè giới thiệu', icon: Users },
+    { v: 'Google Maps', icon: MapPin },
+    { v: 'Facebook / TikTok', icon: MessageCircle },
+    { v: 'Đi ngang thấy thì vào', icon: Footprints },
+  ],
+}
+
+const PAIN: Q = {
+  key: 'pain_point',
+  group: 'Về bạn',
+  q: 'Điều gì khiến bạn bực nhất ở phòng hiện tại?',
+  other: true,
+  opts: [
+    { v: 'Hợp đồng năm đắt đỏ', icon: CreditCard },
+    { v: 'PT chèo kéo', icon: ShieldAlert },
+    { v: 'Phòng quá đông', icon: Users },
+    { v: 'Thiết bị cũ / thiếu', icon: Dumbbell },
+  ],
+}
+
+const PAY_NOW: Q = {
+  key: 'pay_now',
+  group: 'Về GymHop',
+  q: 'Hiện tại bạn trả tiền tập kiểu nào?',
+  opts: [
+    { v: 'Gói tháng / năm', icon: CreditCard },
+    { v: 'Mua vé lẻ từng buổi', icon: Coins },
+    { v: 'Đi ké / tập nhờ', icon: Users },
+  ],
+}
+
+const BUNDLE: Q = {
+  key: 'bundle_appeal',
+  group: 'Về GymHop',
+  q: 'Bundle 10 buổi, dùng dần trong 3 tháng ở mọi phòng, bạn thấy sao?',
+  opts: [
+    { v: 'Rất thích', icon: Heart },
+    { v: 'Nghe được', icon: ThumbsUp },
+    { v: 'Chưa chắc', icon: Meh },
+    { v: 'Không hợp', icon: ThumbsDown },
+  ],
+}
+
+const LIKERT: Opt[] = [
+  { v: 'Rất thích', icon: Heart },
+  { v: 'Nghe được', icon: ThumbsUp },
+  { v: 'Chưa chắc', icon: Meh },
+  { v: 'Không hợp', icon: ThumbsDown },
+]
+
+const MULTI_GYM: Q = {
+  key: 'multi_gym_appeal',
+  group: 'Về GymHop',
+  q: 'Nếu 1 tài khoản tập được ở phòng quen + bất kỳ phòng nào khác cùng bạn bè, bạn thấy sao?',
+  opts: LIKERT,
+}
+
+const QR_EASE: Q = {
+  key: 'qr_ease',
+  group: 'Về GymHop',
+  q: 'Lần đầu tới phòng mới, chỉ cần quét QR là vào tập ngay (không cần đăng ký thẻ), bạn thấy sao?',
+  opts: LIKERT,
+}
+
 const PRICE: Q = {
   key: 'price_band',
   group: 'Về bạn',
@@ -133,7 +251,7 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
 
   const isNew = answers.segment === 'Mới tập (< 3 tháng)'
   const steps = useMemo<Q[]>(
-    () => [SEGMENT, isNew ? BARRIER : FREQ, WITH_WHOM, INVITE, WHO_PAYS, PRICE],
+    () => [SEGMENT, isNew ? BARRIER : FREQ, WITH_WHOM, FRIEND_FREQ, INVITE, WHO_PAYS, GROUP_BOOK, TIME_SLOT, DISCOVERY, PAIN, PAY_NOW, PRICE, BUNDLE, MULTI_GYM, QR_EASE],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [answers.segment],
   )

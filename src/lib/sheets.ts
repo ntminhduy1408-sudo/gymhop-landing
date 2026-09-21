@@ -4,10 +4,19 @@ export type WaitlistPayload = {
   segment?: string
   barrier?: string
   workout_with?: string
+  friend_freq?: string
   invite_interest?: string
   who_pays?: string
+  group_book?: string
   frequency?: string
+  time_slot?: string
+  discovery?: string
+  pain_point?: string
+  pay_now?: string
   price_band?: string
+  bundle_appeal?: string
+  multi_gym_appeal?: string
+  qr_ease?: string
   name: string
   contact?: string
   district?: string
