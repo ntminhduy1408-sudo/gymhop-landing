@@ -93,11 +93,11 @@ export default function App() {
         <div className="md:hidden">
           <div className="overflow-hidden rounded-[32px]">
             <motion.img
-              src="/assets/bg.webp"
+              src="/assets/bg_center.webp"
               alt="App GymHop: tìm partner gym gần bạn và quét QR check-in"
-              className="h-[320px] w-full object-cover object-center"
+              className="h-50 w-full object-cover object-[102%_center]"
               loading="eager"
-              initial={{ scale: 1.1 }}
+              initial={{ scale: 2.0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1] }}
             />
@@ -106,12 +106,12 @@ export default function App() {
             initial="hidden"
             animate="show"
             variants={{ show: { transition: { delayChildren: 0.6, staggerChildren: 0.14 } } }}
-            className="flex flex-col items-center px-2 pt-8 text-center"
+            className="flex flex-col items-center px-2 pt-6 text-center"
           >
             <motion.span
               variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-2 rounded-full bg-[#131316] px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-volt"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#131316] px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-volt"
             >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
               Sắp ra mắt
@@ -119,7 +119,7 @@ export default function App() {
             <motion.h1
               variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-4 font-display text-[32px] font-black leading-[1.35] tracking-[-0.02em]"
+              className="sm:mt-4 font-display text-5xl font-black leading-[1.15] tracking-[-0.02em]"
             >
               Gym nào bạn thích thì là<br />
               <mark className="rounded-xl bg-volt px-3 py-0.5">gym của bạn.</mark>
@@ -127,14 +127,14 @@ export default function App() {
             <motion.p
               variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-5 max-w-[420px] text-[15px] leading-[1.6] text-[#3f434a]"
+              className="mt-4 text-[15px] leading-[1.6] text-[#3f434a]"
             >
               1 credit = 1 buổi tập ở bất kỳ partner gym nào. Tìm gym gần nhà, trường, chỗ làm — quét QR check-in, không hợp đồng năm, không sale PT.
             </motion.p>
             <motion.div
               variants={{ hidden: { y: 26, opacity: 0 }, show: { y: 0, opacity: 1 } }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-6"
+              className="mt-5"
             >
               <Button variant="volt" onClick={() => setOpen(true)}>
                 Tham gia waitlist <ArrowRight size={16} className="ml-1" />
@@ -191,7 +191,7 @@ export default function App() {
         </div>
 
         {/* Trust strip — Klarna: statement left, stats right */}
-        <div className="flex flex-col jusitfy-center items-center gap-10 px-2 py-16 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col jusitfy-center items-center gap-8 px-2 py-12 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:py-16">
           <motion.p
             initial="hidden"
             whileInView="show"
@@ -235,16 +235,16 @@ export default function App() {
       </section>
 
       {/* Why — Klarna pattern: centered title top, lifestyle card + accordion below */}
-      <section id="why" className="mx-auto max-w-[1320px] scroll-mt-24 min-h-screen flex items-center justify-center flex-col">
+      <section id="why" className="md:mx-auto max-w-[1320px] scroll-mt-24 min-h-screen flex items-center justify-center flex-col border-t md:border-none py-12 mx-4 md:p-0">
         <Reveal className="text-center">
-          <h2 className="font-display text-[32px] font-black leading-[1.05] tracking-[-0.02em] sm:text-[48px]">
-             <mark className="rounded-xl bg-volt px-4 py-1">GymHop</mark> - Đăng ký 1 lần tập ở mọi nơi
+          <h2 className="font-display mx-auto max-w-[640px] text-[32px] font-black leading-[1.08] tracking-[-0.02em] sm:text-[48px]">
+            Đăng ký 1 lần, <mark className="rounded-xl bg-volt px-3 py-0.5 [box-decoration-break:clone]">tập ở mọi nơi.</mark>
           </h2>
-          <p className="mx-auto mt-5 max-w-[560px] text-[16px] leading-[1.6] text-[#5f6368]">
+          <p className="hidden md:block mx-auto mt-5 max-w-[560px] text-[16px] leading-[1.6] text-[#5f6368]">
             Một tài khoản, mọi partner gym — tìm chỗ tập gần nhất, rủ bạn theo cùng, check-in một chạm mà không nghe một lời chào sale nào.
           </p>
         </Reveal>
-        <div className="mt-12 grid items-center lg:grid-cols-2 gap-8">
+        <div className="md:mt-12 p-4 grid items-center lg:grid-cols-2 gap-2 md:gap-8">
           <Reveal className="order-2 lg:order-1">
             <LifestyleCard active={active} />
           </Reveal>
