@@ -10,7 +10,7 @@ function out(obj) {
 }
 
 function doGet() {
-  return out({ ok: true, service: 'GYMHOP-waitlist' });
+  return out({ ok: true, service: 'GYMHOP-waitlist', cols: COLS.length });
 }
 
 function doPost(e) {

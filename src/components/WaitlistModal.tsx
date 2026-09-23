@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useRef, useState, type ComponentType } from 'react'
 import {
   ArrowLeft,
+  ArrowRight,
   BadgeCheck,
   Calendar,
   CalendarCheck,
@@ -42,7 +43,7 @@ import { cn } from '@/lib/utils'
 
 type Icon = ComponentType<{ size?: number | string; className?: string }>
 type Opt = { v: string; icon: Icon }
-type Q = { key: string; group: string; q: string; opts: Opt[]; other?: boolean }
+type Q = { key: string; group: string; q: string; opts: Opt[]; other?: boolean; multi?: boolean }
 
 const SEGMENT: Q = {
   key: 'segment',
@@ -57,6 +58,7 @@ const SEGMENT: Q = {
 
 const BARRIER: Q = {
   key: 'barrier',
+  multi: true,
   group: 'Người mới',
   q: 'Điều gì khiến bạn ngại bắt đầu nhất?',
   other: true,
@@ -140,6 +142,7 @@ const GROUP_BOOK: Q = {
 
 const TIME_SLOT: Q = {
   key: 'time_slot',
+  multi: true,
   group: 'Về bạn',
   q: 'Bạn hay tập khung giờ nào?',
   opts: [
@@ -152,6 +155,7 @@ const TIME_SLOT: Q = {
 
 const DISCOVERY: Q = {
   key: 'discovery',
+  multi: true,
   group: 'Về bạn',
   q: 'Bạn tìm phòng tập mới bằng cách nào?',
   other: true,
@@ -165,6 +169,7 @@ const DISCOVERY: Q = {
 
 const PAIN: Q = {
   key: 'pain_point',
+  multi: true,
   group: 'Về bạn',
   q: 'Điều gì khiến bạn bực nhất ở phòng hiện tại?',
   other: true,
@@ -234,7 +239,7 @@ const PRICE: Q = {
 const EASE = [0.16, 1, 0.3, 1] as const
 
 export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boolean) => void }) {
-  const [stage, setStage] = useState<'survey' | 'contact' | 'done'>('survey')
+  const [stage, setStage] = useState<'intro' | 'survey' | 'contact' | 'done'>('intro')
   const [qi, setQi] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [otherOpen, setOtherOpen] = useState(false)
@@ -255,8 +260,8 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [answers.segment],
   )
-  const total = steps.length + 1 // + contact step
-  const progress = stage === 'survey' ? qi / total : stage === 'contact' ? steps.length / total : 1
+  const total = steps.length + 2 // intro + contact steps
+  const progress = stage === 'intro' ? 0 : stage === 'survey' ? (qi + 1) / total : stage === 'contact' ? (steps.length + 1) / total : 1
 
   const referredBy = useMemo(() => new URLSearchParams(location.search).get('ref') ?? '', [])
   const idKey = useMemo(() => contact.trim() || name.trim() || 'guest', [contact, name, stage])
@@ -268,6 +273,26 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
     setQi(n)
     setOtherOpen(false)
     setOtherText('')
+  }
+
+  function isSelected(q: Q, v: string) {
+    if (!q.multi) return answers[q.key] === v
+    return (answers[q.key] ?? '').split('; ').includes(v)
+  }
+
+  function toggle(opt: string) {
+    const key = steps[qi].key
+    const cur = answers[key] ? answers[key].split('; ') : []
+    const next = cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt]
+    setAnswers({ ...answers, [key]: next.join('; ') })
+  }
+
+  function advance() {
+    if (qi < steps.length - 1) {
+      setTimeout(() => goQi(qi + 1), 120)
+    } else {
+      setTimeout(() => setStage('contact'), 120)
+    }
   }
 
   function answer(opt: string) {
@@ -289,7 +314,15 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
   function answerOther() {
     const t = otherText.trim()
     if (!t) return
-    answer(`Khác: ${t}`)
+    if (step.multi) {
+      const key = step.key
+      const cur = answers[key] ? answers[key].split('; ') : []
+      setAnswers({ ...answers, [key]: [...cur, `Khác: ${t}`].join('; ') })
+      setOtherText('')
+      setOtherOpen(false)
+    } else {
+      answer(`Khác: ${t}`)
+    }
   }
 
   async function submitContact() {
@@ -339,20 +372,71 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
                 transition={{ type: 'spring', bounce: 0.18, duration: 0.5 }}
                 className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] bg-white p-6 shadow-2xl sm:p-8"
               >
-                <div className="flex items-start justify-between">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10">
+                <div className={`flex items-center justify-between`}>
+                  {stage !== 'intro' ? (<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10">
                     <motion.div
                       className="h-full rounded-full bg-[#d9ff3d] ring-1 ring-inset ring-black/15"
                       animate={{ width: `${Math.round(progress * 100)}%` }}
                       transition={{ duration: 0.35, ease: EASE }}
                     />
-                  </div>
+                  </div>) : <div className="font-display text-[26px] font-extrabold leading-[1.12]">GymHop</div>}
                   <Dialog.Close className="-mr-1 -mt-1 ml-3 rounded-full p-1.5 hover:bg-black/5" aria-label="Đóng">
                     <X size={18} />
                   </Dialog.Close>
                 </div>
 
                 <AnimatePresence mode="wait">
+                  {stage === 'intro' && (
+                    <motion.div
+                      key="intro"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.24, ease: EASE }}
+                      className="py-3"
+                    >
+                      <Dialog.Title className="font-display  text-[30px] font-extrabold leading-[1.08] tracking-[-0.025em] text-[#131316] sm:text-[24px]">
+                        Nhận ngay <span className="bg-[#d9ff3d]">2 lượt tập</span> miễn phí khi thực hiện khảo sát
+                      </Dialog.Title>
+
+                      <div
+                        className="relative mt-6 overflow-hidden rounded-2xl bg-[#18191a] p-5 text-white"
+                        role="img"
+                        aria-label="Một credit tương ứng một buổi tập tại phòng gym đối tác"
+                      >
+                        <div className="flex items-start justify-between">
+                          <img
+                            src="/assets/logo.svg"
+                            
+                            alt="GymHop"
+                            className="h-10 w-10"
+                          />
+                          <span className="rounded-full border border-white/30 px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-white/90">
+                            GYM CREDIT
+                          </span>
+                        </div>
+
+                        <div className="mt-9 flex items-end justify-between border-b border-white/25 pb-4">
+                          <div className="font-display text-[56px] font-black leading-none tracking-[-0.04em] text-[#d9ff3d]">
+                            02
+                          </div>
+                          <div className="pb-1 text-right text-sm font-medium leading-5">
+                            1 credit = 1 buổi tập
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-white/75">Dùng tại các phòng gym đối tác gần bạn</p>
+                      </div>
+
+                      <Button
+                        variant="volt"
+                        className="mt-7 w-full justify-center"
+                        onClick={() => setStage('survey')}
+                      >
+                        Bắt đầu khảo sát
+                        <ArrowRight size={16} aria-hidden="true" className="ml-2" />
+                      </Button>
+                    </motion.div>
+                  )}
                   {stage === 'survey' && (
                     <motion.div
                       key={`q-${qi}-${step.key}`}
@@ -374,15 +458,20 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
                       <Dialog.Title className="font-display mt-2 text-[24px] font-bold leading-[1.15]">
                         {step.q}
                       </Dialog.Title>
+                      {step.multi && (
+                        <p className="mt-1.5 text-[13px] font-medium text-black/50">
+                          Chọn tất cả phù hợp với bạn, rồi bấm Tiếp tục.
+                        </p>
+                      )}
                       <div className="mt-4 grid gap-2">
                         {step.opts.map((o) => {
-                          const selected = answers[step.key] === o.v
+                          const selected = isSelected(step, o.v)
                           const Ico = o.icon
                           return (
                             <motion.button
                               key={o.v}
                               whileTap={{ scale: 0.98 }}
-                              onClick={() => answer(o.v)}
+                              onClick={() => (step.multi ? toggle(o.v) : answer(o.v))}
                               className={cn(
                                 'flex items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left text-[15px] font-semibold transition-colors',
                                 selected
@@ -446,6 +535,16 @@ export function WaitlistModal({ open, onOpen }: { open: boolean; onOpen: (v: boo
                               )}
                             </AnimatePresence>
                           </>
+                        )}
+                        {step.multi && (
+                          <Button
+                            variant="volt"
+                            className="mt-1 w-full"
+                            disabled={!answers[step.key]}
+                            onClick={advance}
+                          >
+                            Tiếp tục →
+                          </Button>
                         )}
                       </div>
                     </motion.div>
