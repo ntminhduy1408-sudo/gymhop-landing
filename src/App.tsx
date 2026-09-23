@@ -237,7 +237,7 @@ export default function App() {
       {/* Why — Klarna pattern: centered title top, lifestyle card + accordion below */}
       <section id="why" className="md:mx-auto max-w-[1320px] scroll-mt-24 min-h-screen flex items-center justify-center flex-col border-t md:border-none py-12 mx-4 md:p-0">
         <Reveal className="text-center">
-          <h2 className="font-display mx-auto max-w-[640px] text-[32px] font-black leading-[1.08] tracking-[-0.02em] sm:text-[48px]">
+          <h2 className="font-display mx-auto max-w-[640px] text-[32px] font-black leading-[1.38] md:leading-[1.2] tracking-[-0.02em] md:text-[48px]">
             Đăng ký 1 lần, <mark className="rounded-xl bg-volt px-3 py-0.5 [box-decoration-break:clone]">tập ở mọi nơi.</mark>
           </h2>
           <p className="hidden md:block mx-auto mt-5 max-w-[560px] text-[16px] leading-[1.6] text-[#5f6368]">
